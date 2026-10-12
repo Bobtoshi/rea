@@ -1,4 +1,8 @@
-import { parsePsxExeHeader, type PsxExeHeader } from "./psxExe.js";
+import {
+  hasPsxExeSignature,
+  parsePsxExeHeader,
+  type PsxExeHeader,
+} from "./psxExe.js";
 import type {
   BinaryArchitecture,
   MipsElfMetadata,
@@ -58,7 +62,7 @@ export const parseExecutableHeader = (
     return parseElf(bytes, fileSize);
   if (bytes.length >= 2 && bytes[0] === 0x4d && bytes[1] === 0x5a)
     return parseMz(bytes, fileSize);
-  if (bytes.subarray(0, 8).toString("ascii") === "PS-X EXE") {
+  if (hasPsxExeSignature(bytes)) {
     const parsed = parsePsxExeHeader(bytes, fileSize);
     return parsed.ok
       ? ok({

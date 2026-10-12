@@ -29,6 +29,18 @@ describe("PS-X EXE declarations", () => {
       },
     });
   });
+  it("rejects a high-bit signature impostor during detection and header parsing", () => {
+    const bytes = fixture();
+    bytes[0] = 0xd0;
+    expect(parsePsxExeHeader(bytes, bytes.length)).toEqual({
+      ok: false,
+      error: "truncated or invalid PS-X EXE header",
+    });
+    expect(parseExecutableHeader(bytes, "arm64")).toEqual({
+      ok: false,
+      error: "unsupported binary format",
+    });
+  });
   it("rejects BSS that aliases initialized payload through KSEG1", () => {
     const bytes = fixture();
     bytes.writeUInt32LE(0xa0010010, 0x28);

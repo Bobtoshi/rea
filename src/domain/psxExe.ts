@@ -1,5 +1,11 @@
 import { err, ok, type Result } from "./result.js";
 
+const PSX_EXE_SIGNATURE = Buffer.from("PS-X EXE", "ascii");
+
+/** Match exact signature bytes without folding high-bit impostors to ASCII. */
+export const hasPsxExeSignature = (bytes: Buffer): boolean =>
+  bytes.subarray(0, PSX_EXE_SIGNATURE.length).equals(PSX_EXE_SIGNATURE);
+
 /** Little-endian PS-X EXE declarations; these do not describe runtime overlays. */
 export interface PsxExeHeader {
   readonly entryPoint: number;
@@ -19,10 +25,7 @@ export const parsePsxExeHeader = (
   bytes: Buffer,
   fileSize: number,
 ): Result<PsxExeHeader, string> => {
-  if (
-    bytes.length < 0x800 ||
-    bytes.subarray(0, 8).toString("ascii") !== "PS-X EXE"
-  )
+  if (bytes.length < 0x800 || !hasPsxExeSignature(bytes))
     return err("truncated or invalid PS-X EXE header");
   const header: PsxExeHeader = {
     entryPoint: bytes.readUInt32LE(0x10),
