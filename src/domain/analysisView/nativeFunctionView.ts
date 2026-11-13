@@ -140,6 +140,21 @@ const unrecordedFacetUnknowns = (dossier: FunctionDossier): string[] =>
     dossier[facet] === undefined ? [`${facet} not recorded`] : [],
   );
 
+const unresolvedBranchUnknowns = (
+  api: FunctionDossier["native_api"],
+): string[] => {
+  if (!api?.available) return [];
+  const unknowns: string[] = [];
+  if (api.unresolved_indirect_branches === undefined)
+    unknowns.push("unresolved_indirect_branches not recorded");
+  const omitted = api.unresolved_indirect_branches_omitted ?? 0;
+  if (omitted > 0)
+    unknowns.push(
+      `${String(omitted)} further unresolved indirect branch(es) beyond the provider's inventory bound were not reported; their sites remain unknown`,
+    );
+  return unknowns;
+};
+
 /** Compact dossier summary: identity, pseudocode size, facet counts and value-flow availability. */
 const summarizeDossier = (dossier: FunctionDossier) => {
   const sourceFlow = dossier.native_value_flow;
@@ -216,6 +231,7 @@ const summaryView = (
     ...common.unknowns,
     ...unavailableFacetUnknowns(dossier),
     ...unrecordedFacetUnknowns(dossier),
+    ...unresolvedBranchUnknowns(dossier.native_api),
   ]),
 });
 
@@ -320,14 +336,10 @@ export const projectNativeFunctionView = (
               : "not recorded",
       }),
     );
-  const omittedBranches =
-    view.facet === "unresolved_indirect_branches" && api?.available
-      ? (api.unresolved_indirect_branches_omitted ?? 0)
-      : 0;
-  if (omittedBranches > 0)
+  if (view.facet === "unresolved_indirect_branches")
     common.unknowns = uniqueSorted([
       ...common.unknowns,
-      `${String(omittedBranches)} further unresolved indirect branch(es) beyond the provider's inventory bound were not reported; their sites remain unknown`,
+      ...unresolvedBranchUnknowns(api),
     ]);
   const items = rows.slice(view.offset, view.offset + view.limit);
   return ok({

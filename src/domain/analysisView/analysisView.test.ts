@@ -168,6 +168,26 @@ it("pages unresolved indirect branches and keeps omitted and uninspected sites u
     item: { available: false, reason: "not recorded" },
   });
 
+  const summary = (result: unknown) => {
+    const projected = projectAnalysisView(nativeParent(result), {
+      kind: "summary",
+    });
+    if (!projected.ok) throw projected.error;
+    return analysisViewResultSchema.parse(projected.value);
+  };
+  expect(summary(dossier(uninspected)).unknowns).toContain(
+    "unresolved_indirect_branches not recorded",
+  );
+  const empty = summary(dossier(ghidraNativeApiBoundary()));
+  expect(empty.unknowns).not.toEqual(
+    expect.arrayContaining([
+      expect.stringMatching(/unresolved.indirect.branch/u),
+    ]),
+  );
+  expect(summary(boundary).unknowns).toContain(
+    "2 further unresolved indirect branch(es) beyond the provider's inventory bound were not reported; their sites remain unknown",
+  );
+
   const unavailable = projectAnalysisView(
     nativeParent(
       dossier({
